@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Lock, Zap, Cpu, GraduationCap } from "lucide-react";
+import { Lock, Zap, Cpu, GraduationCap, Clock, ArrowRight, Activity, Calendar } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -7,86 +7,159 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 const tools = [
   {
-    id: "grades",
-    name: "成绩查询",
-    description: "登录教务系统并同步最新成绩",
-    icon: GraduationCap,
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-500/10",
+    category: "Academic",
+    items: [
+      {
+        id: "grades",
+        name: "成绩查询",
+        description: "实时同步教务系统成绩，支持加权计算与排名分析。",
+        icon: GraduationCap,
+        color: "text-emerald-500",
+        bgColor: "bg-emerald-500/10",
+        border: "hover:border-emerald-500/30",
+      },
+      {
+        id: "password-cracker",
+        name: "教务日期查询",
+        description: "教务系统关键日期节点查询与提醒服务。",
+        icon: Calendar,
+        color: "text-violet-500",
+        bgColor: "bg-violet-500/10",
+        border: "hover:border-violet-500/30",
+      },
+    ],
   },
   {
-    id: "password-cracker",
-    name: "教务日期查询",
-    description: "日期格式教务日期查询（内部调试用）",
-    icon: Lock,
-    color: "text-primary",
-    bgColor: "bg-primary/10",
-  },
-  // Placeholder for future tools to show grid layout
-  {
-    id: "coming-soon-1",
-    name: "更多工具",
-    description: "敬请期待...",
-    icon: Zap,
-    color: "text-muted-foreground",
-    bgColor: "bg-muted",
+    category: "System",
+    items: [
+       {
+        id: "system-status",
+        name: "系统状态",
+        description: "监控服务器与本地环境运行状态 (Mock)。",
+        icon: Activity,
+        color: "text-blue-500",
+        bgColor: "bg-blue-500/10",
+        border: "hover:border-blue-500/30",
+      },
+    ]
   },
   {
-      id: "coming-soon-2",
-      name: "系统状态",
-      description: "查看系统运行状态",
-      icon: Cpu,
-      color: "text-muted-foreground",
-      bgColor: "bg-muted",
-    },
+      category: "Coming Soon",
+      items: [
+        {
+            id: "more",
+            name: "更多工具",
+            description: "敬请期待更多实用工具上线...",
+            icon: Zap,
+            color: "text-amber-500",
+            bgColor: "bg-amber-500/10",
+            border: "hover:border-amber-500/30",
+            disabled: true,
+        },
+      ]
+  }
 ];
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [greeting, setGreeting] = useState("Good Morning");
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good Morning");
+    else if (hour < 18) setGreeting("Good Afternoon");
+    else setGreeting("Good Evening");
+
+    const timer = setInterval(() => setTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent animate-in fade-in slide-in-from-left-4 duration-700">
-          工具箱
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl">
-          欢迎使用大学生必备工具集合，选择一个工具开始使用。
-        </p>
+    <div className="space-y-10 pb-10">
+      {/* Hero Section */}
+      <div className="relative rounded-3xl bg-gradient-to-br from-primary/10 via-background to-accent/5 p-8 md:p-12 border border-primary/10 overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/30 transition-all duration-1000" />
+        
+        <div className="relative z-10 space-y-6">
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary font-medium text-sm uppercase tracking-wider">
+                    <Clock className="w-4 h-4" />
+                    <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+                {greeting}, <span className="text-primary">User</span>
+                </h1>
+                <p className="text-lg text-muted-foreground max-w-xl">
+                欢迎回到您的个人工具箱。这里集成了您常用的教务与系统工具，助您高效完成每一项任务。
+                </p>
+            </div>
+            
+            <div className="flex gap-4">
+                <Button size="lg" className="rounded-full px-8 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:scale-105">
+                    开始使用 <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+                <Button variant="outline" size="lg" className="rounded-full px-8 hover:bg-white/5 border-primary/20">
+                    查看文档
+                </Button>
+            </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {tools.map((tool, index) => (
-          <Card
-            key={tool.id}
-            className={`group cursor-pointer border-border/50 hover:border-primary/50 overflow-hidden relative ${tool.id.startsWith('coming') ? 'opacity-60 cursor-not-allowed' : ''}`}
-            onClick={() => !tool.id.startsWith('coming') && navigate(`/tool/${tool.id}`)}
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-             {/* Hover Glow Effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2 relative z-10">
-              <div
-                className={`p-3 rounded-xl transition-transform duration-300 group-hover:scale-110 ${tool.bgColor} ${tool.color}`}
-              >
-                <tool.icon className="w-6 h-6" />
-              </div>
-              <CardTitle className="text-xl font-bold">
-                {tool.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10">
-              <CardDescription className="text-base mt-2 line-clamp-2">
-                {tool.description}
-              </CardDescription>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Tools Sections */}
+      {tools.map((section, sectionIndex) => (
+        <div key={section.category} className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700" style={{ animationDelay: `${sectionIndex * 150}ms` }}>
+            <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold tracking-tight">{section.category}</h2>
+                <div className="h-px flex-1 bg-border/50" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {section.items.map((tool, index) => (
+                <Card
+                    key={tool.id}
+                    className={`group relative overflow-hidden border-border/40 bg-card/40 backdrop-blur-md transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 ${tool.disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50'} ${tool.border}`}
+                    onClick={() => !tool.disabled && navigate(`/tool/${tool.id}`)}
+                >
+                    {/* Hover Glow Gradient */}
+                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/5 to-transparent pointer-events-none`} />
+                    
+                    <CardHeader className="relative z-10 pb-2">
+                        <div className="flex justify-between items-start">
+                            <div
+                                className={`p-3.5 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm ${tool.bgColor} ${tool.color}`}
+                            >
+                                <tool.icon className="w-6 h-6" />
+                            </div>
+                            {!tool.disabled && (
+                                <div className="p-2 rounded-full bg-background/50 text-muted-foreground opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                                    <ArrowRight className="w-4 h-4" />
+                                </div>
+                            )}
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="relative z-10 space-y-2 pt-4">
+                        <CardTitle className="text-xl font-bold group-hover:text-primary transition-colors">
+                            {tool.name}
+                        </CardTitle>
+                        <CardDescription className="text-sm line-clamp-2 leading-relaxed">
+                            {tool.description}
+                        </CardDescription>
+                    </CardContent>
+                    
+                    {/* Decorative Bottom Bar */}
+                    <div className={`absolute bottom-0 left-0 right-0 h-1 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left ${tool.color.replace('text-', 'bg-')}`} />
+                </Card>
+                ))}
+            </div>
+        </div>
+      ))}
     </div>
   );
 }
