@@ -3,6 +3,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { LayoutDashboard, Menu } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import { Logo } from "./Logo";
 
 export default function Layout() {
   const location = useLocation();
@@ -18,9 +19,7 @@ export default function Layout() {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border/40 bg-card/50 backdrop-blur-xl fixed inset-y-0 z-50">
         <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl shadow-lg shadow-primary/20">
-            T
-          </div>
+          <Logo size={40} />
           <span className="font-bold text-xl tracking-tight">Toolbox</span>
         </div>
 
@@ -52,9 +51,7 @@ export default function Layout() {
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md border-b border-border/40 z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20">
-            T
-          </div>
+          <Logo size={32} />
           <span className="font-bold text-lg">Toolbox</span>
         </div>
         <div className="flex items-center gap-2">
