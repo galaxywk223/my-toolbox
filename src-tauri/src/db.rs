@@ -56,7 +56,11 @@ impl Database {
         }
         if !has_show_column {
             self.conn.execute(
-                "ALTER TABLE password_results ADD COLUMN show_in_grades INTEGER DEFAULT 1",
+                "ALTER TABLE password_results ADD COLUMN show_in_grades INTEGER DEFAULT 0",
+                [],
+            )?;
+            self.conn.execute(
+                "UPDATE password_results SET show_in_grades = 0 WHERE show_in_grades IS NULL",
                 [],
             )?;
         }
@@ -491,7 +495,7 @@ impl Database {
              LEFT JOIN grade_records gr ON gr.username = pr.username
              WHERE pr.password_date IS NOT NULL
                AND TRIM(pr.password_date) <> ''
-               AND COALESCE(pr.show_in_grades, 1) = 1
+               AND COALESCE(pr.show_in_grades, 0) = 1
              GROUP BY pr.username, pr.name, pr.class_name, pr.created_at
              ORDER BY last_updated DESC, pr.created_at DESC",
         )?;

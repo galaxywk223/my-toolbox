@@ -77,11 +77,11 @@ const TerminalLog = ({ logs }: { logs: string[] }) => {
         <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
       </div>
       <div className="text-emerald-500/50 mb-2 select-none">
-        $ system.log --watch
+        $ 日志监控中
       </div>
       {logs.length === 0 && (
         <span className="text-muted-foreground/50 italic">
-          Waiting for process...
+          等待任务开始...
         </span>
       )}
       {logs.map((log, i) => (
@@ -117,9 +117,7 @@ export default function PasswordCrackerTool() {
     const unlisten = listen<CrackProgress>("crack_progress", (event) => {
       setProgress(event.payload);
       if (event.payload.found) {
-        addLog(
-          `SUCCESS: Password found for target! Result: ${event.payload.result}`,
-        );
+        addLog(`成功：已找到密码，结果：${event.payload.result}`);
       }
     });
     return () => {
@@ -141,13 +139,13 @@ export default function PasswordCrackerTool() {
   };
 
   const handleCrack = async () => {
-    if (!username.trim()) return addLog("ERROR: Username required.");
+    if (!username.trim()) return addLog("错误：请输入学号。");
 
     setIsRunning(true);
     setLogs([
-      "Initializing brute-force sequence...",
-      `Target: ${username}`,
-      `Concurrency: ${concurrency}`,
+      "正在初始化任务...",
+      `目标：${username}`,
+      `并发数：${concurrency}`,
     ]);
     setProgress(null);
 
@@ -160,10 +158,10 @@ export default function PasswordCrackerTool() {
           concurrency,
         },
       });
-      addLog(`PROCESS COMPLETE: ${result}`);
+      addLog(`完成：${result}`);
       loadHistory();
     } catch (error) {
-      addLog(`FATAL ERROR: ${error}`);
+      addLog(`失败：${error}`);
     } finally {
       setIsRunning(false);
     }
@@ -174,9 +172,7 @@ export default function PasswordCrackerTool() {
     const file = e.target.files?.[0];
     if (!file) return;
     // ... reuse existing logic logic ...
-    addLog(
-      `File selected: ${file.name}. (Import implementation hidden for UI demo)`,
-    );
+    addLog(`已选择文件：${file.name}（导入逻辑暂未启用）`);
   };
 
   const handleEditRecord = async (record: PasswordResult) => {
@@ -236,7 +232,7 @@ export default function PasswordCrackerTool() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase">
-                  Target ID (Username)
+                  学号
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -252,7 +248,7 @@ export default function PasswordCrackerTool() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground uppercase">
-                    Year
+                    年份
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -266,7 +262,7 @@ export default function PasswordCrackerTool() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground uppercase">
-                    Threads
+                    线程数
                   </label>
                   <div className="relative">
                     <Cpu className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -289,12 +285,12 @@ export default function PasswordCrackerTool() {
               {isRunning ? (
                 <>
                   <StopCircle className="w-5 h-5 mr-2 animate-pulse" />
-                  ABORT
+                  停止
                 </>
               ) : (
                 <>
                   <Play className="w-5 h-5 mr-2" />
-                  INITIATE
+                  开始
                 </>
               )}
             </Button>
@@ -315,7 +311,7 @@ export default function PasswordCrackerTool() {
                 />
                 <User className="w-5 h-5 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
-                  Students.xlsx
+                  学生信息.xlsx
                 </span>
               </label>
               <label className="cursor-pointer border border-dashed border-border hover:border-emerald-500/50 hover:bg-emerald-500/5 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all">
@@ -326,7 +322,7 @@ export default function PasswordCrackerTool() {
                   onChange={handleImportFile}
                 />
                 <Hash className="w-5 h-5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Dates.txt</span>
+                <span className="text-xs text-muted-foreground">日期列表.txt</span>
               </label>
             </div>
           </div>
@@ -337,21 +333,21 @@ export default function PasswordCrackerTool() {
           {/* Status Deck */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatusBadge
-              label="Progress"
+              label="进度"
               value={`${progressPercent}%`}
               active={isRunning}
             />
             <StatusBadge
-              label="Attempted"
+              label="已尝试"
               value={progress?.total_attempted || 0}
             />
             <StatusBadge
-              label="Elapsed"
+              label="耗时"
               value={`${progress?.elapsed_seconds || 0}s`}
             />
             <StatusBadge
-              label="Status"
-              value={isRunning ? "RUNNING" : "IDLE"}
+              label="状态"
+              value={isRunning ? "进行中" : "空闲"}
               active={isRunning}
             />
           </div>
@@ -374,7 +370,7 @@ export default function PasswordCrackerTool() {
                 <div className="animate-in zoom-in duration-300">
                   <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-2" />
                   <div className="text-2xl font-mono font-bold text-green-400">
-                    FOUND MATCH
+                    已找到
                   </div>
                   <div className="text-white bg-green-500/20 px-4 py-1 rounded font-mono">
                     {progress.result}
@@ -383,7 +379,7 @@ export default function PasswordCrackerTool() {
               ) : isRunning ? (
                 <div className="space-y-4">
                   <div className="text-4xl font-mono font-bold text-primary animate-pulse tracking-widest">
-                    {progress?.current_password || "Initializing..."}
+                    {progress?.current_password || "初始化中..."}
                   </div>
                   <div className="w-64 h-2 bg-white/10 rounded-full mx-auto overflow-hidden">
                     <div
@@ -395,7 +391,7 @@ export default function PasswordCrackerTool() {
               ) : (
                 <div className="text-muted-foreground flex flex-col items-center">
                   <Terminal className="w-12 h-12 mb-2 opacity-50" />
-                  <span>Ready to initialize sequence</span>
+                  <span>准备开始任务</span>
                 </div>
               )}
             </div>
@@ -410,7 +406,7 @@ export default function PasswordCrackerTool() {
       <div className="mt-8 border-t border-border/50 pt-8">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <History className="w-5 h-5" />
-          Recent Discoveries
+          最近记录
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {history.slice(0, 6).map((record) => (
@@ -426,7 +422,7 @@ export default function PasswordCrackerTool() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="text-sm font-mono bg-primary/10 text-primary px-2 py-1 rounded">
-                  {record.password_date || "N/A"}
+                  {record.password_date || "无"}
                 </div>
                 <Button
                   size="icon"
@@ -448,9 +444,7 @@ export default function PasswordCrackerTool() {
             </div>
           ))}
           {history.length === 0 && (
-            <div className="text-muted-foreground italic">
-              No history records found.
-            </div>
+            <div className="text-muted-foreground italic">暂无记录</div>
           )}
         </div>
       </div>

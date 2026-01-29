@@ -33,7 +33,7 @@ export default function Layout() {
                 to="/" 
                 className={`text-sm font-medium transition-colors hover:text-primary ${location.pathname === "/" ? "text-primary" : "text-muted-foreground"}`}
             >
-                Dashboard
+                总览
             </Link>
             {/* Add more top-level links here if needed */}
           </nav>
@@ -59,7 +59,7 @@ export default function Layout() {
       <footer className="border-t border-border/40 py-6 md:py-0">
         <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row px-4">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            Built with Tauri + React + Vite.
+            使用 Tauri + React + Vite 构建。
           </p>
         </div>
       </footer>

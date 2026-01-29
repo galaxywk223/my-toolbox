@@ -28,7 +28,7 @@ type ToolSection = {
 
 const tools: ToolSection[] = [
   {
-    category: "Academic",
+    category: "学习",
     items: [
       {
         id: "grades",
@@ -51,7 +51,7 @@ const tools: ToolSection[] = [
     ],
   },
   {
-    category: "System",
+    category: "系统",
     items: [
        {
         id: "system-status",
@@ -65,7 +65,7 @@ const tools: ToolSection[] = [
     ]
   },
   {
-      category: "Coming Soon",
+      category: "即将上线",
       items: [
         {
             id: "more",
@@ -83,14 +83,14 @@ const tools: ToolSection[] = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [greeting, setGreeting] = useState("Good Morning");
+  const [greeting, setGreeting] = useState("早上好");
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Good Morning");
-    else if (hour < 18) setGreeting("Good Afternoon");
-    else setGreeting("Good Evening");
+    if (hour < 12) setGreeting("早上好");
+    else if (hour < 18) setGreeting("下午好");
+    else setGreeting("晚上好");
 
     const timer = setInterval(() => setTime(new Date()), 60000);
     return () => clearInterval(timer);
@@ -109,7 +109,7 @@ export default function Dashboard() {
                     <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-                {greeting}, <span className="text-primary">User</span>
+                {greeting}，<span className="text-primary">同学</span>
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-xl">
                 欢迎回到您的个人工具箱。这里集成了您常用的教务与系统工具，助您高效完成每一项任务。
@@ -121,7 +121,7 @@ export default function Dashboard() {
                     开始使用 <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
                 <Button variant="outline" size="lg" className="rounded-full px-8 hover:bg-white/5 border-primary/20">
-                    查看文档
+                    查看帮助
                 </Button>
             </div>
         </div>

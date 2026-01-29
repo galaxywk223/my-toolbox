@@ -174,6 +174,23 @@ export default function GradeTool() {
     return map[score.trim()] ?? -999;
   };
 
+  const scoreBadgeClass = (scoreNum: number) => {
+    if (scoreNum === -999) {
+      return "bg-transparent border-border text-muted-foreground";
+    }
+    if (scoreNum >= 95) return "bg-transparent text-fuchsia-600 border-fuchsia-300";
+    if (scoreNum >= 90) return "bg-transparent text-blue-600 border-blue-300";
+    if (scoreNum >= 85) return "bg-transparent text-emerald-600 border-emerald-300";
+    if (scoreNum >= 80) return "bg-transparent text-teal-600 border-teal-300";
+    if (scoreNum >= 75) return "bg-transparent text-cyan-600 border-cyan-300";
+    if (scoreNum >= 70) return "bg-transparent text-violet-600 border-violet-300";
+    if (scoreNum >= 65) return "bg-transparent text-amber-600 border-amber-300";
+    if (scoreNum >= 60) return "bg-transparent text-orange-600 border-orange-300";
+    if (scoreNum >= 55) return "bg-transparent text-rose-600 border-rose-300";
+    if (scoreNum >= 50) return "bg-transparent text-red-600 border-red-300";
+    return "bg-transparent text-slate-600 border-slate-300";
+  };
+
   // Loading
   const loadUsers = async () => {
     try {
@@ -410,6 +427,22 @@ export default function GradeTool() {
     const avg = totalCredits > 0 ? weightedScore / totalCredits : 0;
     return { totalCredits, avg, totalCourses, passedCourses };
   }, [filteredGrades]);
+
+  const hasScoreFlag = useMemo(
+    () =>
+      filteredGrades.some(
+        (record) => (record.score_flag ?? "").trim().length > 0,
+      ),
+    [filteredGrades],
+  );
+
+  const hasMakeupTerm = useMemo(
+    () =>
+      filteredGrades.some(
+        (record) => (record.makeup_term ?? "").trim().length > 0,
+      ),
+    [filteredGrades],
+  );
 
   const pendingGroups = useMemo(() => {
     const groups = {
@@ -719,7 +752,7 @@ export default function GradeTool() {
                     users.find((u) => u.username === selectedUser)
                       ?.last_updated!,
                   ).toLocaleDateString()
-                : "Never"
+                : "从未"
             }
             icon={Clock}
             colorClass="text-amber-500"
@@ -904,14 +937,15 @@ export default function GradeTool() {
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-4">成绩标识</th>
+                    {hasScoreFlag && (
+                      <th className="px-6 py-4">成绩标识</th>
+                    )}
                     <th className="px-6 py-4">学分</th>
                     <th className="px-6 py-4">总学时</th>
-                    <th className="px-6 py-4">绩点</th>
-                    <th className="px-6 py-4">课程性质</th>
                     <th className="px-6 py-4">课程属性</th>
-                    <th className="px-6 py-4">考试性质</th>
-                    <th className="px-6 py-4">补重学期</th>
+                    {hasMakeupTerm && (
+                      <th className="px-6 py-4">补重学期</th>
+                    )}
                     <th className="px-6 py-4">学期</th>
                     <th className="px-6 py-4 text-right">操作</th>
                   </tr>
@@ -920,7 +954,9 @@ export default function GradeTool() {
                   {filteredGrades.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={12}
+                        colSpan={
+                          7 + (hasScoreFlag ? 1 : 0) + (hasMakeupTerm ? 1 : 0)
+                        }
                         className="px-6 py-12 text-center text-muted-foreground"
                       >
                         <div className="flex flex-col items-center gap-2">
@@ -949,33 +985,23 @@ export default function GradeTool() {
                           </td>
                           <td className="px-6 py-4">
                             {record.score ? (
-                              <Badge
-                                variant={
-                                  isPass
-                                    ? scoreNum >= 90
-                                      ? "success"
-                                      : "default"
-                                    : "danger"
-                                }
+                              <span
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${scoreBadgeClass(scoreNum)}`}
                               >
                                 {record.score}
-                              </Badge>
+                              </span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-muted-foreground">
-                            {record.score_flag || "-"}
-                          </td>
+                          {hasScoreFlag && (
+                            <td className="px-6 py-4 text-muted-foreground">
+                              {record.score_flag || "-"}
+                            </td>
+                          )}
                           <td className="px-6 py-4">{record.credit}</td>
                           <td className="px-6 py-4">
                             {record.total_hours ?? "-"}
-                          </td>
-                          <td className="px-6 py-4 font-mono text-muted-foreground">
-                            {record.gpa}
-                          </td>
-                          <td className="px-6 py-4">
-                            {record.course_nature || "-"}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex gap-1 flex-wrap">
@@ -989,12 +1015,11 @@ export default function GradeTool() {
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-muted-foreground">
-                            {record.exam_type || "-"}
-                          </td>
-                          <td className="px-6 py-4 text-muted-foreground">
-                            {record.makeup_term || "-"}
-                          </td>
+                          {hasMakeupTerm && (
+                            <td className="px-6 py-4 text-muted-foreground">
+                              {record.makeup_term || "-"}
+                            </td>
+                          )}
                           <td className="px-6 py-4 text-muted-foreground">
                             {record.term}
                           </td>

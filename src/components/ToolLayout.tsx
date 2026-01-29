@@ -26,7 +26,7 @@ export function ToolLayout({ title, description, children, actions }: ToolLayout
                 >
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
-                <span className="text-sm font-medium text-muted-foreground">Back to Dashboard</span>
+                <span className="text-sm font-medium text-muted-foreground">返回总览</span>
             </div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             {title}
