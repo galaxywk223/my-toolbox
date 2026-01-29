@@ -968,8 +968,6 @@ export default function GradeTool() {
                   ) : (
                     filteredGrades.map((record) => {
                       const scoreNum = scoreToNumber(record.score);
-                      const isPass = scoreNum === -999 ? true : scoreNum >= 60;
-
                       return (
                         <tr
                           key={record.id}

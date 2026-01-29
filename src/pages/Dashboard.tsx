@@ -48,6 +48,15 @@ const tools: ToolSection[] = [
         bgColor: "bg-violet-500/10",
         border: "hover:border-violet-500/30",
       },
+      {
+        id: "schedule",
+        name: "课程表",
+        description: "按学期与周次查看课程安排，支持同步更新与本地保存。",
+        icon: Activity,
+        color: "text-blue-500",
+        bgColor: "bg-blue-500/10",
+        border: "hover:border-blue-500/30",
+      },
     ],
   },
   {

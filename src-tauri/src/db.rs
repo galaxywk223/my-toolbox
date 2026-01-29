@@ -82,6 +82,29 @@ impl Database {
             [],
         )?;
         self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS schedule_terms (
+                term TEXT PRIMARY KEY,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )?;
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS schedule_entries (
+                id INTEGER PRIMARY KEY,
+                term TEXT NOT NULL,
+                weekday INTEGER NOT NULL,
+                period_label TEXT NOT NULL,
+                period_index INTEGER,
+                course_name TEXT NOT NULL,
+                teacher TEXT,
+                location TEXT,
+                week_text TEXT,
+                week_numbers TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )?;
+        self.conn.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_courses_unique
              ON plan_courses(username, term, course_code, is_minor)",
             [],
@@ -443,6 +466,50 @@ pub struct PlanCourse {
     pub course_nature: Option<String>,
     pub course_attr: Option<String>,
     pub is_minor: bool,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct ScheduleTerm {
+    pub term: String,
+    pub updated_at: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct ScheduleEntry {
+    pub id: i32,
+    pub term: String,
+    pub weekday: i32,
+    pub period_label: String,
+    pub period_index: Option<i32>,
+    pub course_name: String,
+    pub teacher: Option<String>,
+    pub location: Option<String>,
+    pub week_text: Option<String>,
+    pub week_numbers: Vec<i32>,
+    pub updated_at: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct ScheduleEntryInput {
+    pub term: String,
+    pub weekday: i32,
+    pub period_label: String,
+    pub period_index: Option<i32>,
+    pub course_name: String,
+    pub teacher: Option<String>,
+    pub location: Option<String>,
+    pub week_text: Option<String>,
+    pub week_numbers: Vec<i32>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct UpdateScheduleEntryInput {
+    pub id: i32,
+    pub course_name: Option<String>,
+    pub teacher: Option<String>,
+    pub location: Option<String>,
+    pub week_text: Option<String>,
+    pub week_numbers: Option<Vec<i32>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -913,6 +980,158 @@ impl Database {
     pub fn delete_plan_course(&mut self, id: i32) -> Result<()> {
         self.conn
             .execute("DELETE FROM plan_courses WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    pub fn upsert_schedule_terms(&mut self, terms: &[String]) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        for term in terms {
+            let trimmed = term.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            tx.execute(
+                "INSERT INTO schedule_terms (term)
+                 VALUES (?1)
+                 ON CONFLICT(term) DO UPDATE SET
+                   updated_at = CURRENT_TIMESTAMP",
+                params![trimmed],
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn replace_schedule_entries(
+        &mut self,
+        term: &str,
+        entries: &[ScheduleEntryInput],
+    ) -> Result<()> {
+        let tx = self.conn.transaction()?;
+        tx.execute(
+            "DELETE FROM schedule_entries WHERE term = ?1",
+            params![term],
+        )?;
+        for entry in entries {
+            let week_numbers = entry
+                .week_numbers
+                .iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<_>>()
+                .join(",");
+            tx.execute(
+                "INSERT INTO schedule_entries
+                 (term, weekday, period_label, period_index, course_name, teacher, location, week_text, week_numbers)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                params![
+                    term,
+                    entry.weekday,
+                    entry.period_label,
+                    entry.period_index,
+                    entry.course_name,
+                    entry.teacher,
+                    entry.location,
+                    entry.week_text,
+                    week_numbers,
+                ],
+            )?;
+        }
+        tx.execute(
+            "INSERT INTO schedule_terms (term)
+             VALUES (?1)
+             ON CONFLICT(term) DO UPDATE SET
+               updated_at = CURRENT_TIMESTAMP",
+            params![term],
+        )?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn get_schedule_terms(&self) -> Result<Vec<ScheduleTerm>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT term, updated_at FROM schedule_terms ORDER BY updated_at DESC, term DESC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(ScheduleTerm {
+                term: row.get(0)?,
+                updated_at: row.get(1)?,
+            })
+        })?;
+        let mut terms = Vec::new();
+        for row in rows {
+            terms.push(row?);
+        }
+        Ok(terms)
+    }
+
+    pub fn get_schedule_entries(&self, term: &str) -> Result<Vec<ScheduleEntry>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, term, weekday, period_label, period_index, course_name, teacher, location,
+                    week_text, week_numbers, updated_at
+             FROM schedule_entries
+             WHERE term = ?1
+             ORDER BY weekday ASC, period_index ASC, course_name ASC",
+        )?;
+        let rows = stmt.query_map(params![term], |row| {
+            let week_numbers: Option<String> = row.get(9)?;
+            let weeks = week_numbers
+                .unwrap_or_default()
+                .split(',')
+                .filter_map(|v| v.trim().parse::<i32>().ok())
+                .collect::<Vec<_>>();
+            Ok(ScheduleEntry {
+                id: row.get(0)?,
+                term: row.get(1)?,
+                weekday: row.get(2)?,
+                period_label: row.get(3)?,
+                period_index: row.get(4)?,
+                course_name: row.get(5)?,
+                teacher: row.get(6)?,
+                location: row.get(7)?,
+                week_text: row.get(8)?,
+                week_numbers: weeks,
+                updated_at: row.get(10)?,
+            })
+        })?;
+        let mut entries = Vec::new();
+        for row in rows {
+            entries.push(row?);
+        }
+        Ok(entries)
+    }
+
+    pub fn update_schedule_entry(&mut self, entry: &UpdateScheduleEntryInput) -> Result<()> {
+        let week_numbers = entry.week_numbers.as_ref().map(|weeks| {
+            weeks
+                .iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        });
+        self.conn.execute(
+            "UPDATE schedule_entries
+             SET course_name = COALESCE(?1, course_name),
+                 teacher = COALESCE(?2, teacher),
+                 location = COALESCE(?3, location),
+                 week_text = COALESCE(?4, week_text),
+                 week_numbers = COALESCE(?5, week_numbers),
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?6",
+            params![
+                entry.course_name,
+                entry.teacher,
+                entry.location,
+                entry.week_text,
+                week_numbers,
+                entry.id,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_schedule_entry(&mut self, id: i32) -> Result<()> {
+        self.conn
+            .execute("DELETE FROM schedule_entries WHERE id = ?1", params![id])?;
         Ok(())
     }
 }

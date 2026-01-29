@@ -1,6 +1,7 @@
 mod db;
 mod cracker;
 mod grades;
+mod schedule;
 
 use db::Database;
 use cracker::{PasswordCracker, CrackProgress};
@@ -404,6 +405,79 @@ struct UpdatePlanCourseRequest {
     course_attr: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct SyncScheduleRequest {
+    username: String,
+    password: String,
+    term: Option<String>,
+}
+
+#[tauri::command]
+async fn sync_schedule(request: SyncScheduleRequest) -> Result<(), String> {
+    let username = request.username.trim();
+    let password = request.password.trim();
+    if username.is_empty() || password.is_empty() {
+        return Err("请输入账号和密码".to_string());
+    }
+    let fetch = schedule::fetch_schedule(username, password, request.term).await?;
+    let mut db = open_database()?;
+    db.upsert_schedule_terms(&fetch.terms)
+        .map_err(|e| format!("Failed to save terms: {}", e))?;
+    db.replace_schedule_entries(&fetch.term, &fetch.entries)
+        .map_err(|e| format!("Failed to save schedule: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+fn get_schedule_terms() -> Result<Vec<db::ScheduleTerm>, String> {
+    let db = open_database()?;
+    db.get_schedule_terms()
+        .map_err(|e| format!("Failed to query terms: {}", e))
+}
+
+#[tauri::command]
+fn get_schedule_entries(term: String) -> Result<Vec<db::ScheduleEntry>, String> {
+    let term = term.trim();
+    if term.is_empty() {
+        return Err("请选择学期".to_string());
+    }
+    let db = open_database()?;
+    db.get_schedule_entries(term)
+        .map_err(|e| format!("Failed to query schedule: {}", e))
+}
+
+#[derive(Deserialize)]
+struct UpdateScheduleEntryRequest {
+    id: i32,
+    course_name: Option<String>,
+    teacher: Option<String>,
+    location: Option<String>,
+    week_text: Option<String>,
+    week_numbers: Option<Vec<i32>>,
+}
+
+#[tauri::command]
+fn update_schedule_entry(request: UpdateScheduleEntryRequest) -> Result<(), String> {
+    let mut db = open_database()?;
+    let input = db::UpdateScheduleEntryInput {
+        id: request.id,
+        course_name: request.course_name,
+        teacher: request.teacher,
+        location: request.location,
+        week_text: request.week_text,
+        week_numbers: request.week_numbers,
+    };
+    db.update_schedule_entry(&input)
+        .map_err(|e| format!("Failed to update schedule: {}", e))
+}
+
+#[tauri::command]
+fn delete_schedule_entry(id: i32) -> Result<(), String> {
+    let mut db = open_database()?;
+    db.delete_schedule_entry(id)
+        .map_err(|e| format!("Failed to delete schedule: {}", e))
+}
+
 #[tauri::command]
 fn update_plan_course(request: UpdatePlanCourseRequest) -> Result<(), String> {
     let mut db = open_database()?;
@@ -454,7 +528,12 @@ pub fn run() {
             update_grade_record,
             delete_grade_record,
             update_plan_course,
-            delete_plan_course
+            delete_plan_course,
+            sync_schedule,
+            get_schedule_terms,
+            get_schedule_entries,
+            update_schedule_entry,
+            delete_schedule_entry
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
