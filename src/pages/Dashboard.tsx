@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Lock, Zap, Cpu, GraduationCap, Clock, ArrowRight, Activity, Calendar } from "lucide-react";
+import { Zap, GraduationCap, Clock, ArrowRight, Activity, Calendar } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -7,10 +7,26 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 
-const tools = [
+type ToolItem = {
+  id: string;
+  name: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+  color: string;
+  bgColor: string;
+  border: string;
+  disabled?: boolean;
+};
+
+type ToolSection = {
+  category: string;
+  items: ToolItem[];
+};
+
+const tools: ToolSection[] = [
   {
     category: "Academic",
     items: [
@@ -120,7 +136,7 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {section.items.map((tool, index) => (
+                {section.items.map((tool) => (
                 <Card
                     key={tool.id}
                     className={`group relative overflow-hidden border-border/40 bg-card/40 backdrop-blur-md transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 ${tool.disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50'} ${tool.border}`}

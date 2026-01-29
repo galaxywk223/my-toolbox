@@ -9,18 +9,15 @@ import {
   Calendar,
   User,
   FileUp,
-  Search,
-  Clock,
   CheckCircle2,
-  XCircle,
+  Edit2,
   Hash,
   StopCircle,
+  Trash2,
   History,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ToolLayout } from "@/components/ToolLayout";
-import * as XLSX from "xlsx";
 
 // --- Types ---
 interface CrackProgress {
@@ -39,17 +36,6 @@ interface PasswordResult {
   class_name?: string | null;
   password_date?: string | null;
   created_at: string;
-}
-
-interface StudentImport {
-  username: string;
-  name: string;
-  class_name: string;
-}
-
-interface DateImport {
-  username: string;
-  password_date: string;
 }
 
 // --- Components ---
@@ -117,19 +103,14 @@ const TerminalLog = ({ logs }: { logs: string[] }) => {
 // --- Main Component ---
 
 export default function PasswordCrackerTool() {
-  const navigate = useNavigate();
   // State
   const [username, setUsername] = useState("239074295");
-  const [name, setName] = useState("");
   const [year, setYear] = useState(2005);
   const [concurrency, setConcurrency] = useState(10);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<CrackProgress | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [history, setHistory] = useState<PasswordResult[]>([]);
-
-  // Import State
-  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     loadHistory();
@@ -174,7 +155,7 @@ export default function PasswordCrackerTool() {
       const result = await invoke<string>("crack_password", {
         request: {
           username: username.trim(),
-          name: name.trim() || null,
+          name: null,
           year,
           concurrency,
         },
@@ -196,6 +177,36 @@ export default function PasswordCrackerTool() {
     addLog(
       `File selected: ${file.name}. (Import implementation hidden for UI demo)`,
     );
+  };
+
+  const handleEditRecord = async (record: PasswordResult) => {
+    const nextName = window.prompt("姓名", record.name ?? "");
+    if (nextName === null) return;
+    const nextClass = window.prompt("班级", record.class_name ?? "");
+    if (nextClass === null) return;
+    const nextPassword = window.prompt("密码/日期", record.password_date ?? "");
+    if (nextPassword === null) return;
+    try {
+      await invoke("update_password_result", {
+        username: record.username,
+        name: nextName,
+        class_name: nextClass,
+        password_date: nextPassword,
+      });
+      await loadHistory();
+    } catch (error) {
+      alert(`更新失败: ${error}`);
+    }
+  };
+
+  const handleDeleteRecord = async (record: PasswordResult) => {
+    if (!window.confirm(`确定删除 ${record.username} 吗？`)) return;
+    try {
+      await invoke("delete_password_result", { username: record.username });
+      await loadHistory();
+    } catch (error) {
+      alert(`删除失败: ${error}`);
+    }
   };
 
   const progressPercent = progress
@@ -413,8 +424,26 @@ export default function PasswordCrackerTool() {
                   {new Date(record.created_at).toLocaleDateString()}
                 </div>
               </div>
-              <div className="text-sm font-mono bg-primary/10 text-primary px-2 py-1 rounded">
-                {record.password_date || "N/A"}
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-mono bg-primary/10 text-primary px-2 py-1 rounded">
+                  {record.password_date || "N/A"}
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                  onClick={() => handleEditRecord(record)}
+                >
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={() => handleDeleteRecord(record)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           ))}
@@ -423,6 +452,78 @@ export default function PasswordCrackerTool() {
               No history records found.
             </div>
           )}
+        </div>
+      </div>
+
+      {/* All Records Table */}
+      <div className="mt-8 border-t border-border/50 pt-8">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <History className="w-5 h-5" />
+          全部记录
+        </h3>
+        <div className="rounded-2xl border border-border/50 overflow-hidden bg-card/40 backdrop-blur-md shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border/50">
+                <tr>
+                  <th className="px-6 py-4">学号</th>
+                  <th className="px-6 py-4">姓名</th>
+                  <th className="px-6 py-4">班级</th>
+                  <th className="px-6 py-4">密码/日期</th>
+                  <th className="px-6 py-4">创建时间</th>
+                  <th className="px-6 py-4 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {history.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-12 text-center text-muted-foreground"
+                    >
+                      暂无记录
+                    </td>
+                  </tr>
+                ) : (
+                  history.map((record) => (
+                    <tr key={record.id} className="hover:bg-muted/30">
+                      <td className="px-6 py-4 font-mono">
+                        {record.username}
+                      </td>
+                      <td className="px-6 py-4">{record.name || "-"}</td>
+                      <td className="px-6 py-4">{record.class_name || "-"}</td>
+                      <td className="px-6 py-4 font-mono">
+                        {record.password_date || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {new Date(record.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => handleEditRecord(record)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDeleteRecord(record)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </ToolLayout>

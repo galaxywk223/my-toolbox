@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   RefreshCw,
@@ -9,7 +9,6 @@ import {
   TrendingUp,
   BookOpen,
   Clock,
-  MoreHorizontal,
   Trash2,
   Edit2,
   X,
@@ -20,15 +19,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { ToolLayout } from "@/components/ToolLayout";
 
 // --- Types ---
@@ -131,7 +122,6 @@ const Badge = ({
 // --- Main Component ---
 
 export default function GradeTool() {
-  const navigate = useNavigate();
   // State
   const [users, setUsers] = useState<GradeUser[]>([]);
   const [grades, setGrades] = useState<GradeRecord[]>([]);
@@ -189,7 +179,11 @@ export default function GradeTool() {
     try {
       const result = await invoke<GradeUser[]>("get_grade_users");
       setUsers(result);
-      if (result.length > 0 && !selectedUser) {
+      if (result.length === 0) {
+        setSelectedUser("");
+        return;
+      }
+      if (!result.find((u) => u.username === selectedUser)) {
         setSelectedUser(result[0].username);
       }
     } catch (error) {
@@ -287,6 +281,50 @@ export default function GradeTool() {
     }
   };
 
+  const normalizeField = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  };
+
+  const parseOptionalNumber = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const num = Number(trimmed);
+    return Number.isFinite(num) ? num : null;
+  };
+
+  const handleEditUser = async (user: GradeUser) => {
+    const nextName = window.prompt("姓名", user.display_name ?? "");
+    if (nextName === null) return;
+    const nextClass = window.prompt("班级", user.class_name ?? "");
+    if (nextClass === null) return;
+    const nextPassword = window.prompt("密码/日期(可空)", "");
+    if (nextPassword === null) return;
+    try {
+      await invoke("update_password_result", {
+        username: user.username,
+        name: normalizeField(nextName),
+        class_name: normalizeField(nextClass),
+        password_date: normalizeField(nextPassword),
+      });
+      await loadUsers();
+    } catch (error) {
+      alert(`更新失败: ${error}`);
+    }
+  };
+
+  const handleRemoveUser = async (user: GradeUser) => {
+    if (!window.confirm(`确定移除 ${user.username} 吗？成绩将被删除。`)) {
+      return;
+    }
+    try {
+      await invoke("hide_grade_user", { username: user.username });
+      await loadUsers();
+    } catch (error) {
+      alert(`移除失败: ${error}`);
+    }
+  };
+
   // Logic - Computations
   const termOptions = useMemo(() => {
     const terms = Array.from(new Set(grades.map((item) => item.term)));
@@ -373,6 +411,34 @@ export default function GradeTool() {
     return { totalCredits, avg, totalCourses, passedCourses };
   }, [filteredGrades]);
 
+  const pendingGroups = useMemo(() => {
+    const groups = {
+      required: [] as PlanCourse[],
+      elective: [] as PlanCourse[],
+      other: [] as PlanCourse[],
+    };
+    for (const course of pendingCourses) {
+      const attr = (course.course_attr ?? "").trim();
+      if (attr === "必修") {
+        groups.required.push(course);
+      } else if (attr === "选修") {
+        groups.elective.push(course);
+      } else {
+        groups.other.push(course);
+      }
+    }
+    return groups;
+  }, [pendingCourses]);
+
+  const pendingSections = useMemo(
+    () => [
+      { label: "必修", items: pendingGroups.required },
+      { label: "选修", items: pendingGroups.elective },
+      { label: "其他", items: pendingGroups.other },
+    ],
+    [pendingGroups],
+  );
+
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "desc";
     if (
@@ -387,19 +453,42 @@ export default function GradeTool() {
 
   // Logic - CRUD (Simplified for brevity, reusing prompt logic but wrapping nicer if I had time, sticking to prompts for now)
   const handleEditGrade = async (record: GradeRecord) => {
-    const score = window.prompt("修改成绩", record.score || "");
+    const score = window.prompt("成绩", record.score ?? "");
     if (score === null) return;
-    // ... minimal impl for demo ...
+    const scoreFlag = window.prompt("成绩标识", record.score_flag ?? "");
+    if (scoreFlag === null) return;
+    const credit = window.prompt("学分", record.credit?.toString() ?? "");
+    if (credit === null) return;
+    const totalHours = window.prompt(
+      "总学时",
+      record.total_hours?.toString() ?? "",
+    );
+    if (totalHours === null) return;
+    const gpa = window.prompt("绩点", record.gpa?.toString() ?? "");
+    if (gpa === null) return;
+    const examType = window.prompt("考试性质", record.exam_type ?? "");
+    if (examType === null) return;
+    const courseAttr = window.prompt("课程属性", record.course_attr ?? "");
+    if (courseAttr === null) return;
+    const courseNature = window.prompt(
+      "课程性质",
+      record.course_nature ?? "",
+    );
+    if (courseNature === null) return;
+    const makeupTerm = window.prompt("补重学期", record.makeup_term ?? "");
+    if (makeupTerm === null) return;
     try {
       await invoke("update_grade_record", {
         id: record.id,
-        score,
-        credit: record.credit,
-        gpa: record.gpa,
-        exam_type: record.exam_type,
-        course_attr: record.course_attr,
-        course_nature: record.course_nature,
-        makeup_term: record.makeup_term,
+        score: normalizeField(score),
+        score_flag: normalizeField(scoreFlag),
+        credit: parseOptionalNumber(credit),
+        total_hours: parseOptionalNumber(totalHours),
+        gpa: parseOptionalNumber(gpa),
+        exam_type: normalizeField(examType),
+        course_attr: normalizeField(courseAttr),
+        course_nature: normalizeField(courseNature),
+        makeup_term: normalizeField(makeupTerm),
       });
       loadGrades(selectedUser);
     } catch (e) {
@@ -413,6 +502,52 @@ export default function GradeTool() {
     loadGrades(selectedUser);
   };
 
+  const handleEditPlanCourse = async (course: PlanCourse) => {
+    const courseName = window.prompt("课程名称", course.course_name ?? "");
+    if (courseName === null) return;
+    const credit = window.prompt("学分", course.credit?.toString() ?? "");
+    if (credit === null) return;
+    const totalHours = window.prompt(
+      "总学时",
+      course.total_hours?.toString() ?? "",
+    );
+    if (totalHours === null) return;
+    const examMode = window.prompt("考核方式", course.exam_mode ?? "");
+    if (examMode === null) return;
+    const courseNature = window.prompt(
+      "课程性质",
+      course.course_nature ?? "",
+    );
+    if (courseNature === null) return;
+    const courseAttr = window.prompt("课程属性", course.course_attr ?? "");
+    if (courseAttr === null) return;
+
+    try {
+      await invoke("update_plan_course", {
+        id: course.id,
+        course_name: normalizeField(courseName),
+        credit: parseOptionalNumber(credit),
+        total_hours: parseOptionalNumber(totalHours),
+        exam_mode: normalizeField(examMode),
+        course_nature: normalizeField(courseNature),
+        course_attr: normalizeField(courseAttr),
+      });
+      loadPendingCourses(selectedUser, gradeCategory);
+    } catch (error) {
+      alert(`更新失败: ${error}`);
+    }
+  };
+
+  const handleDeletePlanCourse = async (id: number) => {
+    if (!window.confirm("确定删除该待修课程吗？")) return;
+    try {
+      await invoke("delete_plan_course", { id });
+      loadPendingCourses(selectedUser, gradeCategory);
+    } catch (error) {
+      alert(`删除失败: ${error}`);
+    }
+  };
+
   // --- Render ---
 
   return (
@@ -421,22 +556,12 @@ export default function GradeTool() {
       description="多维度的成绩分析与管理工具，支持本地数据存储与隐私保护。"
       actions={
         <div className="flex items-center gap-2">
-          {/* Account Selector */}
-          <div className="relative group">
-            <select
-              className="appearance-none bg-background border border-input hover:bg-accent hover:text-accent-foreground rounded-full px-4 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary transition-all cursor-pointer"
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-            >
-              {users.length === 0 && <option>无账号</option>}
-              {users.map((u) => (
-                <option key={u.username} value={u.username}>
-                  {u.username} - {u.display_name || "未命名"}
-                </option>
-              ))}
-            </select>
-            <Users className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          </div>
+          {selectedUser && (
+            <div className="flex items-center gap-2 rounded-full border border-border px-3 py-2 text-xs text-muted-foreground">
+              <Users className="w-3.5 h-3.5" />
+              <span>{selectedUser}</span>
+            </div>
+          )}
 
           <Button
             onClick={() => setShowImportModal(true)}
@@ -469,6 +594,102 @@ export default function GradeTool() {
       }
     >
       <div className="space-y-8">
+        {/* Users List */}
+        <div className="rounded-2xl border border-border/50 overflow-hidden bg-card/40 backdrop-blur-md shadow-sm">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold">已添加用户</h3>
+              <Badge variant="outline">{users.length}</Badge>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              点击查看成绩
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border/50">
+                <tr>
+                  <th className="px-6 py-4">学号</th>
+                  <th className="px-6 py-4">姓名</th>
+                  <th className="px-6 py-4">班级</th>
+                  <th className="px-6 py-4">最近更新</th>
+                  <th className="px-6 py-4 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {users.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-6 py-12 text-center text-muted-foreground"
+                    >
+                      暂无用户
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
+                    <tr
+                      key={user.username}
+                      className={`hover:bg-muted/30 ${
+                        user.username === selectedUser
+                          ? "bg-primary/5"
+                          : ""
+                      }`}
+                    >
+                      <td className="px-6 py-4 font-mono">
+                        {user.username}
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.display_name || "-"}
+                      </td>
+                      <td className="px-6 py-4">{user.class_name || "-"}</td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {user.last_updated
+                          ? new Date(user.last_updated).toLocaleString()
+                          : "-"}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedUser(user.username)}
+                          >
+                            查看
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleUpdateUser(user)}
+                            disabled={isSyncing}
+                          >
+                            更新
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleRemoveUser(user)}
+                          >
+                            移除
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
@@ -549,27 +770,6 @@ export default function GradeTool() {
               </button>
             </div>
 
-            {/* Term Select */}
-            <div className="relative">
-              <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <select
-                multiple={false} // Simplify to single select for UI cleaness or keep custom multiple. Let's do simple single select for now or a better dropdown
-                className="h-9 pl-8 pr-8 border border-border bg-transparent rounded-lg text-xs focus:ring-1 focus:ring-primary appearance-none outline-none"
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedTerms(val ? [val] : []);
-                }}
-                value={selectedTerms[0] || ""}
-              >
-                <option value="">所有学期</option>
-                {termOptions.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Search */}
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -631,7 +831,50 @@ export default function GradeTool() {
                 >
                   清除
                 </Button>
-              )}
+                )}
+            </div>
+
+            <div className="mt-4 space-y-2 text-sm">
+              <span className="font-medium text-muted-foreground">学期筛选:</span>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedTerms.length === 0 ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 px-3"
+                  onClick={() => setSelectedTerms([])}
+                >
+                  全部
+                </Button>
+                {termOptions.map((term) => {
+                  const checked = selectedTerms.includes(term);
+                  return (
+                    <label
+                      key={term}
+                      className={`flex items-center gap-2 px-3 h-8 rounded-md border text-xs cursor-pointer transition-colors ${
+                        checked
+                          ? "bg-primary/10 text-primary border-primary/30"
+                          : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="accent-primary"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedTerms((prev) => [...prev, term]);
+                          } else {
+                            setSelectedTerms((prev) =>
+                              prev.filter((t) => t !== term),
+                            );
+                          }
+                        }}
+                      />
+                      <span>{term}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -661,9 +904,14 @@ export default function GradeTool() {
                         )}
                       </div>
                     </th>
+                    <th className="px-6 py-4">成绩标识</th>
                     <th className="px-6 py-4">学分</th>
+                    <th className="px-6 py-4">总学时</th>
                     <th className="px-6 py-4">绩点</th>
-                    <th className="px-6 py-4">属性</th>
+                    <th className="px-6 py-4">课程性质</th>
+                    <th className="px-6 py-4">课程属性</th>
+                    <th className="px-6 py-4">考试性质</th>
+                    <th className="px-6 py-4">补重学期</th>
                     <th className="px-6 py-4">学期</th>
                     <th className="px-6 py-4 text-right">操作</th>
                   </tr>
@@ -672,7 +920,7 @@ export default function GradeTool() {
                   {filteredGrades.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={12}
                         className="px-6 py-12 text-center text-muted-foreground"
                       >
                         <div className="flex flex-col items-center gap-2">
@@ -683,13 +931,13 @@ export default function GradeTool() {
                     </tr>
                   ) : (
                     filteredGrades.map((record) => {
-                      const scoreNum = parseFloat(record.score || "0");
-                      const isPass = !isNaN(scoreNum) ? scoreNum >= 60 : true; // Simple logic
+                      const scoreNum = scoreToNumber(record.score);
+                      const isPass = scoreNum === -999 ? true : scoreNum >= 60;
 
                       return (
                         <tr
                           key={record.id}
-                          className="hover:bg-muted/30 transition-colors group"
+                          className="hover:bg-muted/30 transition-colors"
                         >
                           <td className="px-6 py-4">
                             <div className="font-medium text-foreground">
@@ -716,14 +964,23 @@ export default function GradeTool() {
                               <span className="text-muted-foreground">-</span>
                             )}
                           </td>
+                          <td className="px-6 py-4 text-muted-foreground">
+                            {record.score_flag || "-"}
+                          </td>
                           <td className="px-6 py-4">{record.credit}</td>
+                          <td className="px-6 py-4">
+                            {record.total_hours ?? "-"}
+                          </td>
                           <td className="px-6 py-4 font-mono text-muted-foreground">
                             {record.gpa}
                           </td>
                           <td className="px-6 py-4">
+                            {record.course_nature || "-"}
+                          </td>
+                          <td className="px-6 py-4">
                             <div className="flex gap-1 flex-wrap">
                               <span className="text-xs border border-border px-1.5 py-0.5 rounded text-muted-foreground">
-                                {record.course_attr}
+                                {record.course_attr || "-"}
                               </span>
                               {record.is_minor && (
                                 <span className="text-xs bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded">
@@ -733,10 +990,16 @@ export default function GradeTool() {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-muted-foreground">
+                            {record.exam_type || "-"}
+                          </td>
+                          <td className="px-6 py-4 text-muted-foreground">
+                            {record.makeup_term || "-"}
+                          </td>
+                          <td className="px-6 py-4 text-muted-foreground">
                             {record.term}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-2">
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -790,52 +1053,82 @@ export default function GradeTool() {
                       </td>
                     </tr>
                   ) : (
-                    pendingCourses.map((course) => (
-                      <tr
-                        key={`${course.term}-${course.course_code}`}
-                        className="hover:bg-muted/30 transition-colors group"
-                      >
-                        <td className="px-6 py-4 text-muted-foreground">
-                          {course.term}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-foreground">
-                            {course.course_name}
-                          </div>
-                          <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                            {course.course_code}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">{course.credit}</td>
-                        <td className="px-6 py-4">{course.total_hours}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-1 flex-wrap">
-                            <span className="text-xs border border-border px-1.5 py-0.5 rounded text-muted-foreground">
-                              {course.course_attr}
-                            </span>
-                            <span className="text-xs border border-border px-1.5 py-0.5 rounded text-muted-foreground">
-                              {course.course_nature}
-                            </span>
-                            {course.is_minor && (
-                              <span className="text-xs bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded">
-                                辅修
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-muted-foreground">
-                          {course.exam_mode}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {/* Edit/Delete actions could be added here similar to grades if needed */}
-                            <span className="text-xs text-muted-foreground italic">
-                              暂无操作
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                    pendingSections.map((section) =>
+                      section.items.length === 0 ? null : (
+                        <Fragment key={section.label}>
+                          <tr className="bg-muted/30">
+                            <td
+                              colSpan={7}
+                              className="px-6 py-2 text-xs font-semibold text-muted-foreground"
+                            >
+                              {section.label}
+                            </td>
+                          </tr>
+                          {section.items.map((course) => (
+                            <tr
+                              key={`${course.term}-${course.course_code}`}
+                              className="hover:bg-muted/30 transition-colors"
+                            >
+                              <td className="px-6 py-4 text-muted-foreground">
+                                {course.term}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="font-medium text-foreground">
+                                  {course.course_name}
+                                </div>
+                                <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                                  {course.course_code}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">{course.credit}</td>
+                              <td className="px-6 py-4">
+                                {course.total_hours}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex gap-1 flex-wrap">
+                                  <span className="text-xs border border-border px-1.5 py-0.5 rounded text-muted-foreground">
+                                    {course.course_attr || "-"}
+                                  </span>
+                                  <span className="text-xs border border-border px-1.5 py-0.5 rounded text-muted-foreground">
+                                    {course.course_nature || "-"}
+                                  </span>
+                                  {course.is_minor && (
+                                    <span className="text-xs bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded">
+                                      辅修
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-muted-foreground">
+                                {course.exam_mode || "-"}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                    onClick={() => handleEditPlanCourse(course)}
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    onClick={() =>
+                                      handleDeletePlanCourse(course.id)
+                                    }
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      ),
+                    )
                   )}
                 </tbody>
               </table>

@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
-import { LayoutDashboard, Github, Settings } from "lucide-react";
+import { Github } from "lucide-react";
 import { Button } from "./ui/button";
 import { Logo } from "./Logo";
 
