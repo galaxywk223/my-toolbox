@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
+import { ThemeColorSelector } from "./ThemeColorSelector";
 import { Github } from "lucide-react";
 import { Button } from "./ui/button";
 import { Logo } from "./Logo";
@@ -45,6 +46,7 @@ export default function Layout() {
                     <Github className="w-5 h-5" />
                 </a>
             </Button>
+            <ThemeColorSelector />
             <ThemeToggle />
           </div>
         </div>
