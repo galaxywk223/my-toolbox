@@ -32,8 +32,8 @@ const tools: ToolSection[] = [
     items: [
       {
         id: "grades",
-        name: "成绩查询",
-        description: "实时同步教务系统成绩，支持加权计算与排名分析。",
+        name: "成绩管理",
+        description: "多维度的成绩分析与管理工具，支持本地数据存储与隐私保护。",
         icon: GraduationCap,
         color: "text-emerald-500",
         bgColor: "bg-emerald-500/10",
@@ -41,28 +41,14 @@ const tools: ToolSection[] = [
       },
       {
         id: "password-cracker",
-        name: "教务日期查询",
-        description: "教务系统关键日期节点查询与提醒服务。",
+        name: "教务系统探针",
+        description: "高级教务系统日期节点验证与查询工具 (v2.0)",
         icon: Calendar,
         color: "text-violet-500",
         bgColor: "bg-violet-500/10",
         border: "hover:border-violet-500/30",
       },
     ],
-  },
-  {
-    category: "系统",
-    items: [
-       {
-        id: "system-status",
-        name: "系统状态",
-        description: "监控服务器与本地环境运行状态 (Mock)。",
-        icon: Activity,
-        color: "text-blue-500",
-        bgColor: "bg-blue-500/10",
-        border: "hover:border-blue-500/30",
-      },
-    ]
   },
   {
       category: "即将上线",
@@ -75,6 +61,16 @@ const tools: ToolSection[] = [
             color: "text-amber-500",
             bgColor: "bg-amber-500/10",
             border: "hover:border-amber-500/30",
+            disabled: true,
+        },
+        {
+            id: "system-status",
+            name: "系统状态",
+            description: "功能规划中，敬请期待。",
+            icon: Activity,
+            color: "text-blue-500",
+            bgColor: "bg-blue-500/10",
+            border: "hover:border-blue-500/30",
             disabled: true,
         },
       ]
