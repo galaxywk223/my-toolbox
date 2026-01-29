@@ -66,6 +66,7 @@ export default function PasswordCrackerTool() {
   const [filterText, setFilterText] = useState("");
   const [filterClass, setFilterClass] = useState("all");
   const [showWithDateOnly, setShowWithDateOnly] = useState(false);
+  const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
     loadHistory();
@@ -85,6 +86,39 @@ export default function PasswordCrackerTool() {
       setHistory(result);
     } catch (error) {
       console.error("Failed to load history:", error);
+    }
+  };
+
+  const handleEditRecord = async (record: PasswordResult) => {
+    const nameValue = window.prompt("姓名", record.name ?? "");
+    if (nameValue === null) return;
+    const classValue = window.prompt("班级", record.class_name ?? "");
+    if (classValue === null) return;
+    const passwordDate = window.prompt("日期/密码", record.password_date ?? "");
+    if (passwordDate === null) return;
+    try {
+      await invoke("update_password_result", {
+        username: record.username,
+        name: nameValue.trim() ? nameValue.trim() : null,
+        class_name: classValue.trim() ? classValue.trim() : null,
+        password_date: passwordDate.trim() ? passwordDate.trim() : null,
+      });
+      await loadHistory();
+      setActionMessage("已更新记录");
+    } catch (error) {
+      setActionMessage(`更新失败: ${error}`);
+    }
+  };
+
+  const handleDeleteRecord = async (record: PasswordResult) => {
+    const ok = window.confirm(`确定删除 ${record.username} 这条记录吗？`);
+    if (!ok) return;
+    try {
+      await invoke("delete_password_result", { username: record.username });
+      await loadHistory();
+      setActionMessage("已删除记录");
+    } catch (error) {
+      setActionMessage(`删除失败: ${error}`);
     }
   };
 
@@ -655,6 +689,22 @@ export default function PasswordCrackerTool() {
                             <span className="text-primary-foreground/80 dark:text-primary">日期:</span>
                             <span className="text-primary">{record.password_date ?? "未填写"}</span>
                         </div>
+                        <div className="flex items-center gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditRecord(record)}
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteRecord(record)}
+                          >
+                            删除
+                          </Button>
+                        </div>
                     </div>
                   </div>
                 ))}
@@ -714,6 +764,12 @@ export default function PasswordCrackerTool() {
             </div>
           </div>
 
+          {actionMessage && (
+            <div className="p-3 rounded-lg border bg-muted/30 text-sm">
+              {actionMessage}
+            </div>
+          )}
+
           {filteredRecords.length === 0 ? (
              <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
                 <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -728,6 +784,7 @@ export default function PasswordCrackerTool() {
                     <th className="py-3 px-4 font-medium">姓名</th>
                     <th className="py-3 px-4 font-medium">班级</th>
                     <th className="py-3 px-4 font-medium">日期</th>
+                    <th className="py-3 px-4 font-medium">操作</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -747,6 +804,24 @@ export default function PasswordCrackerTool() {
                           ) : (
                               <span className="text-muted-foreground">—</span>
                           )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditRecord(record)}
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteRecord(record)}
+                          >
+                            删除
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

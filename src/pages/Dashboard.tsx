@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Lock, Zap, Cpu } from "lucide-react";
+import { Lock, Zap, Cpu, GraduationCap } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -9,6 +9,14 @@ import {
 } from "@/components/ui/card";
 
 const tools = [
+  {
+    id: "grades",
+    name: "成绩查询",
+    description: "登录教务系统并同步最新成绩",
+    icon: GraduationCap,
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-500/10",
+  },
   {
     id: "password-cracker",
     name: "教务日期查询",
