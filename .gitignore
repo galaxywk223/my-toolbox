@@ -17,6 +17,9 @@ dist-ssr
 .turbo
 .cache
 .parcel-cache
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
 
 # Env files
 .env
@@ -33,12 +36,26 @@ src-tauri/target/*
 src-tauri/.cargo
 **/target
 **/*.rs.bk
+src-tauri/target/**/*
+src-tauri/gen/**/*
+
+# Tauri / Bundles
+src-tauri/target/release/bundle
+src-tauri/target/release/bundle/**/*
 
 # Coverage / reports
 coverage
 *.lcov
 *.lcov.info
 *.log.*
+
+# Local databases
+password_results.db
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
 
 # OS / temp
 Thumbs.db
@@ -47,14 +64,16 @@ Thumbs.db
 *.bak
 *.swp
 *.swo
+.DS_Store
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.history
+.idea/**

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { ArrowLeft, Play, History } from "lucide-react";
+import { ArrowLeft, Play, History, FileUp, Database, Search, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -320,387 +320,442 @@ export default function PasswordCrackerTool() {
     });
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <Button
-          variant="ghost"
-          className="gap-2 pl-0 hover:bg-transparent hover:text-slate-900 dark:hover:text-slate-50"
-          onClick={() => navigate("/")}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          返回首页
-        </Button>
+    <div className="space-y-6">
+      <Button
+        variant="ghost"
+        className="gap-2 pl-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
+        onClick={() => navigate("/")}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        返回首页
+      </Button>
 
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            教务日期查询
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400">
-            基于日期格式的教务日期查询（仅供校内调试使用）
-          </p>
-        </div>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <span className="p-2 bg-primary/10 text-primary rounded-lg">
+                <Database className="w-8 h-8" />
+            </span>
+          教务日期查询
+        </h1>
+        <p className="text-muted-foreground">
+          基于日期格式的教务日期查询（仅供校内调试使用）
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 配置卡片 */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>配置参数</CardTitle>
-              <CardDescription>设置查询的基本参数</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* 用户名输入 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                  用户名
-                </label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={isRunning}
-                  placeholder="输入用户名或学号"
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              {/* 姓名输入 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                  姓名（可选）
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={isRunning}
-                  placeholder="输入姓名（可留空）"
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              {/* 年份输入 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                  年份
-                </label>
-                <input
-                  type="number"
-                  value={year}
-                  onChange={(e) => setYear(parseInt(e.target.value))}
-                  disabled={isRunning}
-                  min="1900"
-                  max="2100"
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              {/* 并发数 */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                  并发数
-                </label>
-                <input
-                  type="number"
-                  value={concurrency}
-                  onChange={(e) => setConcurrency(parseInt(e.target.value))}
-                  disabled={isRunning}
-                  min="1"
-                  max="50"
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              {/* 开始按钮 */}
-              <Button
-                onClick={handleCrack}
-                disabled={isRunning}
-                className="w-full gap-2 bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                <Play className="w-4 h-4" />
-                {isRunning ? "查询中..." : "开始查询"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* 信息卡片 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>信息</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {progress && (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                      进度
-                    </p>
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full transition-all"
-                        style={{ width: `${progressPercent}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                      {progress.total_attempted} / {progress.total_passwords}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      当前尝试日期: {progress.current_password}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      耗时: {progress.elapsed_seconds}秒
-                    </p>
-                  </div>
-                  {progress.found && (
-                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                      <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                        ✓ 已找到日期: {progress.result}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {message && (
-                <div
-                  className={`p-3 rounded ${
-                    message.includes("错误")
-                      ? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
-                      : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                  }`}
-                >
-                  <p className="text-sm">{message}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 导入学生信息 */}
-        <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 配置卡片 */}
+        <Card className="lg:col-span-2 shadow-lg shadow-primary/5">
           <CardHeader>
-            <CardTitle>导入学生信息</CardTitle>
-            <CardDescription>仅导入学号、姓名、班级（不含日期）</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-primary" />
+                配置参数
+            </CardTitle>
+            <CardDescription>设置查询的基本参数</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleImportFile(file);
-              }}
-              className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-md file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
-            />
-            {importMessage && (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                {importMessage}
-              </p>
-            )}
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-slate-500 dark:text-slate-500">
-                当前待导入：{importRows.length} 条
-              </p>
-              <Button
-                onClick={handleImport}
-                disabled={isImporting || importRows.length === 0}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white"
-              >
-                {isImporting ? "导入中..." : "开始导入"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 用户名输入 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    用户名 / 学号
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={isRunning}
+                    placeholder="输入用户名或学号"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
 
-        {/* 导入日期记录 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>导入日期记录</CardTitle>
-            <CardDescription>
-              支持两种 TXT 格式：以 “Username:” 开头或带 “--- Log entry at ... ---” 分隔的日志格式
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <input
-              type="file"
-              accept=".txt"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleImportDateFile(file);
-              }}
-              className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-md file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200 dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
-            />
-            {dateImportMessage && (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                {dateImportMessage}
-              </p>
-            )}
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-slate-500 dark:text-slate-500">
-                当前待导入：{dateImportRows.length} 条
-              </p>
-              <Button
-                onClick={handleImportDates}
-                disabled={isDateImporting || dateImportRows.length === 0}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white"
-              >
-                {isDateImporting ? "导入中..." : "开始导入"}
-              </Button>
+                {/* 姓名输入 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    姓名（可选）
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isRunning}
+                    placeholder="输入姓名（可留空）"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* 历史记录 */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>历史记录</CardTitle>
-              <CardDescription>之前的查询成功记录</CardDescription>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {/* 年份输入 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    年份
+                  </label>
+                  <input
+                    type="number"
+                    value={year}
+                    onChange={(e) => setYear(parseInt(e.target.value))}
+                    disabled={isRunning}
+                    min="1900"
+                    max="2100"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* 并发数 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    并发数
+                  </label>
+                  <input
+                    type="number"
+                    value={concurrency}
+                    onChange={(e) => setConcurrency(parseInt(e.target.value))}
+                    disabled={isRunning}
+                    min="1"
+                    max="50"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
             </div>
+
+            {/* 开始按钮 */}
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setShowHistory(!showHistory);
-                if (!showHistory) loadHistory();
-              }}
-              className="gap-2"
+              onClick={handleCrack}
+              disabled={isRunning}
+              className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 h-11 text-lg font-semibold"
             >
-              <History className="w-4 h-4" />
-              {showHistory ? "隐藏" : "查看"}
+              <Play className={`w-5 h-5 ${isRunning ? 'animate-spin' : ''}`} />
+              {isRunning ? "查询中..." : "开始查询"}
             </Button>
-          </CardHeader>
-
-          {showHistory && (
-            <CardContent>
-              {history.length === 0 ? (
-                <p className="text-slate-500 dark:text-slate-400 text-sm">
-                  暂无记录
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {history.map((record) => (
-                    <div
-                      key={record.id}
-                      className="p-3 border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-900"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1 flex-1">
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                            用户: {record.username}
-                          </p>
-                          {record.name && (
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                              姓名: {record.name}
-                            </p>
-                          )}
-                          {record.class_name && (
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                              班级: {record.class_name}
-                            </p>
-                          )}
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            日期: {record.password_date ?? "未填写"}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-500">
-                            年份: {record.year}
-                          </p>
-                        </div>
-                        <p className="text-xs text-slate-400 dark:text-slate-600 whitespace-nowrap ml-4">
-                          {new Date(record.created_at).toLocaleString("zh-CN")}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          )}
+          </CardContent>
         </Card>
 
-        {/* 可视化列表 */}
-        <Card>
+        {/* 信息卡片 */}
+        <Card className="h-fit">
           <CardHeader>
-            <CardTitle>记录列表</CardTitle>
-            <CardDescription>显示学号、姓名、班级和日期，可查询与筛选</CardDescription>
+            <CardTitle>实时状态</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input
-                type="text"
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                placeholder="搜索学号/姓名/班级/日期"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <select
-                value={filterClass}
-                onChange={(e) => setFilterClass(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">全部班级</option>
-                {classOptions.map((cls) => (
-                  <option key={cls} value={cls}>
-                    {cls}
-                  </option>
-                ))}
-              </select>
-              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                <input
-                  type="checkbox"
-                  checked={showWithDateOnly}
-                  onChange={(e) => setShowWithDateOnly(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                仅显示有日期
-              </label>
-            </div>
-
-            {filteredRecords.length === 0 ? (
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                没有符合条件的记录
-              </p>
+            {progress ? (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                <div>
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>进度</span>
+                    <span>{progressPercent}%</span>
+                  </div>
+                  <div className="w-full bg-secondary/50 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(124,58,237,0.5)]"
+                      style={{ width: `${progressPercent}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 text-center font-mono">
+                    {progress.total_attempted} / {progress.total_passwords}
+                  </p>
+                </div>
+                <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+                    <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">当前尝试</span>
+                        <span className="font-mono text-foreground">{progress.current_password}</span>
+                    </div>
+                     <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">耗时</span>
+                        <span className="font-mono text-foreground">{progress.elapsed_seconds}s</span>
+                    </div>
+                </div>
+                
+                {progress.found && (
+                  <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20 animate-bounce">
+                    <p className="text-sm font-bold text-green-600 dark:text-green-400 text-center flex items-center justify-center gap-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                      已找到: {progress.result}
+                    </p>
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                      <th className="py-2 pr-4">学号</th>
-                      <th className="py-2 pr-4">姓名</th>
-                      <th className="py-2 pr-4">班级</th>
-                      <th className="py-2 pr-4">日期</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRecords.map((record) => (
-                      <tr
-                        key={record.id}
-                        className="border-b border-slate-100 dark:border-slate-800"
-                      >
-                        <td className="py-2 pr-4 text-slate-900 dark:text-slate-50">
-                          {record.username}
-                        </td>
-                        <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">
-                          {record.name ?? "—"}
-                        </td>
-                        <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">
-                          {record.class_name ?? "—"}
-                        </td>
-                        <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">
-                          {record.password_date ?? "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                         <Play className="w-6 h-6 text-muted-foreground/50" />
+                    </div>
+                    <p>等待任务开始...</p>
+                </div>
+            )}
+
+            {message && (
+              <div
+                className={`p-3 rounded-lg border ${
+                  message.includes("错误")
+                    ? "bg-destructive/10 border-destructive/20 text-destructive"
+                    : "bg-primary/10 border-primary/20 text-primary"
+                }`}
+              >
+                <p className="text-sm font-medium">{message}</p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+        {/* 导入区域 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 导入学生信息 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <FileUp className="w-5 h-5 text-blue-500" />
+                    导入学生信息
+                </CardTitle>
+                <CardDescription>Excel文件 (学号、姓名、班级)</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative group">
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImportFile(file);
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center transition-colors group-hover:border-primary/50 group-hover:bg-primary/5">
+                         <FileUp className="w-8 h-8 mx-auto text-muted-foreground mb-2 group-hover:text-primary transition-colors" />
+                         <p className="text-sm text-muted-foreground group-hover:text-primary transition-colors">点击或拖拽上传 Excel 文件</p>
+                    </div>
+                </div>
+                
+                {importMessage && (
+                  <p className="text-xs text-muted-foreground text-center bg-muted/50 p-2 rounded">
+                    {importMessage}
+                  </p>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    待导入: {importRows.length}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={handleImport}
+                    disabled={isImporting || importRows.length === 0}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {isImporting ? "导入中..." : "确认导入"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+    
+            {/* 导入日期记录 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <FileUp className="w-5 h-5 text-emerald-500" />
+                    导入日期记录
+                </CardTitle>
+                <CardDescription>
+                  TXT 日志文件导入
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                 <div className="relative group">
+                    <input
+                      type="file"
+                      accept=".txt"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImportDateFile(file);
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center transition-colors group-hover:border-emerald-500/50 group-hover:bg-emerald-500/5">
+                         <FileUp className="w-8 h-8 mx-auto text-muted-foreground mb-2 group-hover:text-emerald-500 transition-colors" />
+                         <p className="text-sm text-muted-foreground group-hover:text-emerald-500 transition-colors">点击或拖拽上传 TXT 文件</p>
+                    </div>
+                </div>
+
+                {dateImportMessage && (
+                  <p className="text-xs text-muted-foreground text-center bg-muted/50 p-2 rounded">
+                    {dateImportMessage}
+                  </p>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    待导入: {dateImportRows.length}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={handleImportDates}
+                    disabled={isDateImporting || dateImportRows.length === 0}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    {isDateImporting ? "导入中..." : "确认导入"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+        </div>
+
+      {/* 历史记录 */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+                 <History className="w-5 h-5 text-primary" />
+                历史记录
+            </CardTitle>
+            <CardDescription>之前的查询成功记录</CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setShowHistory(!showHistory);
+              if (!showHistory) loadHistory();
+            }}
+            className="gap-2"
+          >
+            <History className="w-4 h-4" />
+            {showHistory ? "收起" : "展开"}
+          </Button>
+        </CardHeader>
+
+        {showHistory && (
+          <CardContent>
+            {history.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                  暂无历史记录
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4">
+                {history.map((record) => (
+                  <div
+                    key={record.id}
+                    className="p-4 rounded-xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                       <span className="font-mono font-bold text-lg text-primary">{record.username}</span>
+                       <span className="text-xs text-muted-foreground">{new Date(record.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                        {record.name && (
+                             <div className="flex justify-between">
+                                <span className="text-muted-foreground">姓名:</span>
+                                <span>{record.name}</span>
+                             </div>
+                        )}
+                        {record.class_name && (
+                             <div className="flex justify-between">
+                                <span className="text-muted-foreground">班级:</span>
+                                <span>{record.class_name}</span>
+                             </div>
+                        )}
+                        <div className="flex justify-between font-medium bg-primary/10 p-1 rounded px-2 mt-2">
+                            <span className="text-primary-foreground/80 dark:text-primary">日期:</span>
+                            <span className="text-primary">{record.password_date ?? "未填写"}</span>
+                        </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        )}
+      </Card>
+
+      {/* 可视化列表 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="w-5 h-5 text-primary" />
+            记录查询
+          </CardTitle>
+          <CardDescription>显示学号、姓名、班级和日期，可查询与筛选</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div className="md:col-span-5">
+                 <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      placeholder="搜索学号/姓名/班级/日期..."
+                      className="w-full pl-9 pr-4 py-2 border border-input rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                    />
+                 </div>
+            </div>
+            <div className="md:col-span-4">
+                 <select
+                    value={filterClass}
+                    onChange={(e) => setFilterClass(e.target.value)}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                  >
+                    <option value="all">全部班级</option>
+                    {classOptions.map((cls) => (
+                      <option key={cls} value={cls}>
+                        {cls}
+                      </option>
+                    ))}
+                  </select>
+            </div>
+            <div className="md:col-span-3 flex items-center">
+                 <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={showWithDateOnly}
+                      onChange={(e) => setShowWithDateOnly(e.target.checked)}
+                      className="w-4 h-4 rounded border-input text-primary focus:ring-primary accent-primary"
+                    />
+                    仅显示有日期
+                  </label>
+            </div>
+          </div>
+
+          {filteredRecords.length === 0 ? (
+             <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-border">
+                <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                没有符合条件的记录
+             </div>
+          ) : (
+            <div className="rounded-xl border border-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="py-3 px-4 font-medium">学号</th>
+                    <th className="py-3 px-4 font-medium">姓名</th>
+                    <th className="py-3 px-4 font-medium">班级</th>
+                    <th className="py-3 px-4 font-medium">日期</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {filteredRecords.map((record) => (
+                    <tr
+                      key={record.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="py-3 px-4 font-mono">{record.username}</td>
+                      <td className="py-3 px-4">{record.name ?? "—"}</td>
+                      <td className="py-3 px-4">{record.class_name ?? "—"}</td>
+                      <td className="py-3 px-4">
+                          {record.password_date ? (
+                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                   {record.password_date}
+                               </span>
+                          ) : (
+                              <span className="text-muted-foreground">—</span>
+                          )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
