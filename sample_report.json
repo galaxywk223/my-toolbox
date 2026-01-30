@@ -1,0 +1,69 @@
+{
+  "scanTimestamp": "2026-01-30T12:34:56Z",
+  "repoRoot": "E:/Work/demo-monorepo",
+  "modules": [
+    {
+      "name": "Backend",
+      "path": "/backend",
+      "languages": [
+        { "language": "Python", "bytes": 520000, "files": 120, "percent": 91.2 },
+        { "language": "Config", "bytes": 35000, "files": 12, "percent": 6.1 },
+        { "language": "Other", "bytes": 15000, "files": 6, "percent": 2.7 }
+      ],
+      "frameworks": ["Django", "DRF"],
+      "deps": ["PostgreSQL", "Celery", "Django ORM", "Django Migrations"],
+      "backend": {
+        "framework": "Django",
+        "rest": true,
+        "db": "PostgreSQL",
+        "queue": "Celery",
+        "orm": "Django ORM",
+        "migrations": "Django Migrations",
+        "aiFeatures": []
+      },
+      "frontend": null,
+      "generated": { "files": 8, "klocIgnored": 2.4 },
+      "assets": { "files": 1, "bytes": 7340032 },
+      "warnings": []
+    },
+    {
+      "name": "Frontend",
+      "path": "/frontend",
+      "languages": [
+        { "language": "TypeScript", "bytes": 430000, "files": 180, "percent": 82.7 },
+        { "language": "CSS", "bytes": 60000, "files": 22, "percent": 11.5 },
+        { "language": "Config", "bytes": 26000, "files": 8, "percent": 5.0 },
+        { "language": "Other", "bytes": 4000, "files": 2, "percent": 0.8 }
+      ],
+      "frameworks": ["Vite", "Vue3"],
+      "deps": ["Pinia", "ElementPlus", "ECharts"],
+      "backend": null,
+      "frontend": {
+        "builder": "Vite",
+        "vue": 3,
+        "store": "Pinia",
+        "ui": "ElementPlus",
+        "visualization": ["ECharts"]
+      },
+      "generated": null,
+      "assets": null,
+      "warnings": ["package.json 解析失败，已跳过 dependencies 解析（示例）"]
+    }
+  ],
+  "summary": {
+    "totalSize": 20485760,
+    "ignoredSize": 1234560,
+    "ignoredRatio": 0.0602,
+    "assetsSize": 7340032,
+    "generatedFiles": 8,
+    "generatedKlocIgnored": 2.4,
+    "effectiveFiles": 510,
+    "effectiveKloc": 78.6,
+    "warnings": ["Monorepo 模式：已按模块拆分统计（示例）"]
+  },
+  "ignoredFiles": [
+    { "path": "frontend/package-lock.json", "size": 812345, "reason": "ignoredExtension", "category": "Ignored" },
+    { "path": "backend/db.sql", "size": 210000, "reason": "ignoredExtension", "category": "Ignored" },
+    { "path": "frontend/dist/app.min.js", "size": 180000, "reason": "ignoredMinified", "category": "Ignored" }
+  ]
+}

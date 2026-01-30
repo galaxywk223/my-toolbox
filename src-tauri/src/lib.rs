@@ -3,11 +3,15 @@ mod cracker;
 mod grades;
 mod schedule;
 mod project_tree;
+mod tech_stack;
+pub mod semantic_scan;
 
 use db::Database;
 use cracker::{PasswordCracker, CrackProgress};
 use grades::{fetch_grades, GradeFetchResult};
 use project_tree::{scan_project_tree, save_tree_to_file};
+use tech_stack::{export_tech_stack_json, export_tech_stack_pdf, scan_tech_stack_github, scan_tech_stack_local};
+use semantic_scan::{export_semantic_json, export_semantic_schema, scan_semantic_github, scan_semantic_local};
 use serde::{Deserialize, Serialize};
 use tauri::Emitter;
 use std::sync::Arc;
@@ -539,7 +543,15 @@ pub fn run() {
             update_schedule_entry,
             delete_schedule_entry,
             scan_project_tree,
-            save_tree_to_file
+            save_tree_to_file,
+            scan_tech_stack_local,
+            scan_tech_stack_github,
+            export_tech_stack_json,
+            export_tech_stack_pdf,
+            scan_semantic_local,
+            scan_semantic_github,
+            export_semantic_json,
+            export_semantic_schema
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

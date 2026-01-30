@@ -64,7 +64,7 @@ export default function ProjectTreeScannerTool() {
     setStatus(null);
     try {
       const result = await invoke<ProjectTreeScanResult>("scan_project_tree", {
-        root_path: normalized,
+        rootPath: normalized,
       });
       setTree(result.tree);
       setUsedGit(result.used_git);
@@ -198,4 +198,3 @@ export default function ProjectTreeScannerTool() {
     </ToolLayout>
   );
 }
-

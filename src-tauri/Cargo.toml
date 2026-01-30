@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
+default-run = "my-toolbox"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -30,6 +31,13 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 chrono = "0.4"
 base64 = "0.22"
 scraper = "0.19"
+ignore = "0.4"
+rayon = "1"
+schemars = { version = "0.8", features = ["derive"] }
+toml = "0.8"
+zip = "0.6"
+tempfile = "3"
+printpdf = "0.7"
 
 [dev-dependencies]
 tempfile = "3"

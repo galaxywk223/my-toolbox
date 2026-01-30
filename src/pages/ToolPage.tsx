@@ -4,6 +4,7 @@ import PasswordCrackerTool from "@/components/PasswordCrackerTool";
 import GradeTool from "@/components/GradeTool";
 import ScheduleTool from "@/components/ScheduleTool";
 import ProjectTreeScannerTool from "@/components/ProjectTreeScannerTool";
+import TechStackDetectorTool from "@/components/TechStackDetectorTool";
 
 export default function ToolPage() {
   const { id } = useParams();
@@ -24,6 +25,10 @@ export default function ToolPage() {
 
   if (id === "project-tree") {
     return <ProjectTreeScannerTool />;
+  }
+
+  if (id === "tech-stack") {
+    return <TechStackDetectorTool />;
   }
 
   useEffect(() => {

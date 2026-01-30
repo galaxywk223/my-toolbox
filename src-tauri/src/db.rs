@@ -234,6 +234,59 @@ impl Database {
                 [],
             )?;
         }
+
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS tech_stack_scans (
+                id INTEGER PRIMARY KEY,
+                input_kind TEXT NOT NULL,
+                input_value TEXT NOT NULL,
+                fingerprint TEXT NOT NULL,
+                report_json TEXT NOT NULL,
+                elapsed_ms INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )?;
+        self.conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_tech_stack_scans_unique
+             ON tech_stack_scans(input_kind, fingerprint)",
+            [],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_tech_stack_scan_json(
+        &self,
+        input_kind: &str,
+        fingerprint: &str,
+    ) -> Result<Option<String>> {
+        self.conn
+            .query_row(
+                "SELECT report_json FROM tech_stack_scans WHERE input_kind = ?1 AND fingerprint = ?2 LIMIT 1",
+                params![input_kind, fingerprint],
+                |row| row.get(0),
+            )
+            .optional()
+    }
+
+    pub fn upsert_tech_stack_scan_json(
+        &self,
+        input_kind: &str,
+        input_value: &str,
+        fingerprint: &str,
+        report_json: &str,
+        elapsed_ms: i64,
+    ) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO tech_stack_scans (input_kind, input_value, fingerprint, report_json, elapsed_ms)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT(input_kind, fingerprint) DO UPDATE SET
+               input_value = excluded.input_value,
+               report_json = excluded.report_json,
+               elapsed_ms = excluded.elapsed_ms,
+               created_at = CURRENT_TIMESTAMP",
+            params![input_kind, input_value, fingerprint, report_json, elapsed_ms],
+        )?;
         Ok(())
     }
 
